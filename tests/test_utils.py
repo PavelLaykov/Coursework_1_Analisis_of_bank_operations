@@ -2,14 +2,14 @@ from unittest.mock import patch
 import pytest
 import pandas as pd
 
-from src.utils import (data_cards, exchange_rate,
-                       greeting, read_xls, stock_price, top_transactions)
+from src.utils import (get_data_range, get_exchange_rates,
+                       get_greeting, read_excel_file, get_stock_prices, get_top_five_transactions)
 
 
 def test_top_five_transactions(excel_data: list[dict]) -> None:
     """Тест вывода топ-5 транзакций."""
 
-    data = top_transactions(pd.DataFrame(excel_data))
+    data = get_top_five_transactions(pd.DataFrame(excel_data))
     assert data == [
         {"amount": 9700.0, "category": "Пополнения", "date": "25.01.2018", "description": "Перевод с карты"},
         {"amount": 5748.0, "category": "Авиабилеты", "date": "25.01.2018", "description": "Aviacassa"},
@@ -19,28 +19,28 @@ def test_top_five_transactions(excel_data: list[dict]) -> None:
     ]
 
 
-def test_greeting() -> None:
-    date = greeting("2022-02-12 12:12:12")
+def test_get_greeting() -> None:
+    date = get_greeting("2022-02-12 12:12:12")
     assert date == "Доброе утро"
-    date = greeting("2022-02-12 00:12:12")
+    date = get_greeting("2022-02-12 00:12:12")
     assert date == "Доброй ночи"
-    date = greeting("2022-02-12 14:12:12")
+    date = get_greeting("2022-02-12 14:12:12")
     assert date == "Добрый день"
-    date = greeting("2022-02-12 20:12:12")
+    date = get_greeting("2022-02-12 20:12:12")
     assert date == "Добрый вечер"
 
 
-def test_read_xlsx() -> None:
-    assert read_xlsx("") is None
+def test_read_excel_file() -> None:
+    assert read_excel_file("") is None
 
 
-def test_data_cards() -> None:
-    assert data_cards("") == []
+def test_get_data_range() -> None:
+    assert get_data_range("") == []
 
 
-def test_data_card(sample_df: pd.DataFrame) -> None:
+def test_get_top_five_transactions(sample_df: pd.DataFrame) -> None:
     """Тест вывода топ-5 транзакций."""
-    assert data_cards(sample_df) == [
+    assert get_top_five_transactions(sample_df) == [
         {"cashback": 2.0, "last_digits": "1111", "total_spent": 200.0},
         {"cashback": 3.0, "last_digits": "2222", "total_spent": 300.0},
         {"cashback": 4.0, "last_digits": "3333", "total_spent": 400.0},
@@ -53,13 +53,13 @@ def test_data_card(sample_df: pd.DataFrame) -> None:
     ]
 
 
-def test_exchange_rate() -> None:
+def test_get_exchange_rates() -> None:
     with patch("requests.get") as mock_get:
         mock_get.return_value.json.return_value = {"status": "ok", "values": [{"close": "100"}]}
-        assert exchange_rate() == [{"currency": "USD", "rate": 100.0}, {"currency": "EUR", "rate": 100.0}]
+        assert get_exchange_rates() == [{"currency": "USD", "rate": 100.0}, {"currency": "EUR", "rate": 100.0}]
 
 
-def tests_stock_price() -> None:
+def tests_get_stock_prices() -> None:
     with patch("requests.get") as mock_get:
         mock_get.return_value.json.return_value = {"status": "ok", "values": [{"price": 222.00}]}
-        assert stock_price() == []
+        assert get_stock_prices() == []
