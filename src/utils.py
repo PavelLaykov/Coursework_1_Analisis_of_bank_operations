@@ -1,14 +1,16 @@
 import json
 import logging
 import os
+from builtins import isinstance
 from datetime import datetime, timedelta
 from typing import Any
 from urllib.request import urlopen
 import numpy
 import pandas as pd
+from pathlib import Path
 import requests
 from dotenv import load_dotenv
-from pandas import DataFrame, read_excel, to_datetime
+
 
 # Настройка логирования
 from logger_settings import get_logger
@@ -22,6 +24,9 @@ top_5_operations_logger = logging.getLogger("top_5_operations")
 common_information_logger = logging.getLogger("common_information")
 get_exchange_rate_logger = logging.getLogger("get_exchange_rate")
 get_stock_price_logger = logging.getLogger("get_stock_price")
+
+BASEDIR = Path(__file__).parent.parent.resolve()
+file_path = str(BASEDIR / "data" / "operations.xlsx")
 
 
 @log()
@@ -66,8 +71,8 @@ def get_data_range(date_str, data_range):
 
 
 @log()
-def greeting() -> str:
-    """Функция возвращает приветствие в зависимости от текущего времени/"""
+def get_greeting() -> str:
+    """Функция возвращает приветствие в зависимости от текущего времени"""
     # Получаем текущее время
     current_time = datetime.now().time()
     print(f"Текущее время равно: {current_time}")
@@ -94,7 +99,7 @@ def greeting() -> str:
 
 
 @log()
-def read_xlsx(file_path) -> Union[None, pd.DataFrame]:
+def read_excel_file(file_path) -> Union[None, pd.DataFrame]:
     """
     Чтение файла Excel и получение номера карты и
     :param file_path: расположение файла
@@ -173,7 +178,7 @@ def filtered_cards():
 
 @log()
 def common_information(list_dict: list[dict]) -> list[Any] | None:
-    """возвращает общую информацию по всем транзакциям"""
+    """Функция возвращает общую информацию по всем транзакциям"""
     try:
         list_data = []
         df = pd.DataFrame(list_dict)
@@ -322,8 +327,7 @@ def group_income(filtered_data):
     income_by_category["Сумма операции"] = income_by_category["Сумма операции"].round(0)
     top_income = income_by_category.nlargest(7, "Сумма операции")
     other_income_sum = income_by_category.loc[
-        ~income_by_category["Категория"].isin(top_income["Категория"]), "Сумма операции"
-    ].sum()
+        ~income_by_category["Категория"].isin(top_income["Категория"]), "Сумма операции"].sum()
     other_income = pd.DataFrame({"Категория": ["Остальное"], "Сумма операции": [other_income_sum]})
     combined_income = pd.concat([top_income, other_income], ignore_index=True)
 
@@ -339,10 +343,10 @@ if __name__ == '__main__':
     #get_currency_rates(currencies)
     #get_top_five_transactions(transaction_lst)
     #common_information(list_dict)
-    #read_xlsx(path)
+    #read_excel_file(path)
     #filtered_cards()
     #generate_json(current_date)
     #get_operations_excel()
-    #greeting()
+    #get_greeting()
     #get_data_range(date_str, data_range)
     print('utils')

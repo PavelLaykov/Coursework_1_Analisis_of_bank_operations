@@ -1,50 +1,18 @@
 import datetime
 import json
-from json import JSONDecodeError
 from pathlib import Path
-
 import pandas as pd
 
 # Настройка логирования
 from logger_settings import get_logger
 from src.decorators import log
-from src.utils import read_xlsx
+from src.utils import read_excel_file, common_information, get_top_five_transactions, get_stock_prices, \
+    get_exchange_rates, get_greeting
 
 logger = get_logger()
 
-
 BASEDIR = Path(__file__).parent.parent.resolve()
 file_path = str(BASEDIR / "data" / "operations.xlsx")
-
-@log()
-def get_greeting(date_time: str) -> str:
-    """Приветствие пользователя в зависимости от его времени суток"""
-    greeting = ""
-    time_period = (date_time, "%Y-%m-%d %H:%M:%S")
-    sorted_df = get_path_period(file_path, time_period)
-    cards = get_card_spent(sorted_df)
-    top_transactions = transactions(sorted_df, object)
-    currency_rates = get_currency()
-    stock_prices = get_stock_price()
-    try:
-        logger.info("получение и формирование json-ответа")
-        data = {
-            "greeting": greeting,
-            "cards": cards,
-            "top_transactions": top_transactions,
-            "currency_rates": currency_rates,
-            "stock_prices": stock_prices,
-        }
-
-        json_data = json.dumps(data, ensure_ascii=False, indent=4)
-
-        logger.info("успешно сформирован ответ")
-        return json_data
-
-    except JSONDecodeError:
-        logger.error("Произошла ошибка кодирования")
-        return "ошибка формирования ответа"
-
 
 transaction_for_print = [{}]
 
@@ -53,7 +21,7 @@ transaction_for_print = [{}]
 def main_views(str_time='datetime'):
     """Главная функция для анализа данных принимает дату в формате строки YYYY-MM-DD HH:MM:SS и
     возвращает общую информацию в формате json о банковских транзакциях за период с начала месяца до этой даты"""
-    data = read_xlsx(file_path)
+    data = read_excel_file(file_path)
     data_df = pd.DataFrame(data)
     date_obj = datetime.datetime.strptime(str_time, "%Y-%m-%d %H:%M:%S")
     data_df["datetime"] = pd.to_datetime(data_df["Дата операции"], dayfirst=True)
@@ -65,8 +33,8 @@ def main_views(str_time='datetime'):
         "greetings": get_greeting('datetime'),
         "cards": common_information(json_data),
         "top_transactions": get_top_five_transactions(json_data),
-        "currency_rates": get_stock_price("user_settings.json"),
-        "stock_prices": get_exchange_rate("user_settings.json"),
+        "currency_rates": get_stock_prices("user_settings.json"),
+        "stock_prices": get_exchange_rates("user_settings.json"),
     }
     return json.dumps(agg_dict, ensure_ascii=False)
 
@@ -81,7 +49,7 @@ def final_list(current_date):
     generate_json(current_date)
     filtered_cards()
     filtered_top()
-    transaction_for_print[0]["greeting"] = hello(current_date)
+    transaction_for_print[0]["greeting"] = get_greeting(current_date)
     transaction_for_print[0]["cards"] = cards
     transaction_for_print[0]["top_transactions"] = top_list
     transaction_for_print[0]["currency_rates"] = add_to_list()
@@ -117,7 +85,7 @@ def analyze_data(date_str='datetime', data_range="M"):
     total_income = filtered_data["Сумма операции"][filtered_data["Сумма операции"] > 0].sum()
     # Получение валютных курсов и цен акций
     try:
-        with open(file_path1) as f:
+        with open(file_path) as f:
             user_settings = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError) as e:
         raise ValueError(f"Ошибка при чтении файла настроек пользователя: {e}")
