@@ -1,42 +1,25 @@
 import functools
-from datetime import datetime
-from functools import wraps
 import json
 import os
-from pathlib import Path
+from datetime import datetime
+from functools import wraps
 from typing import Optional, Any
+from pathlib import Path
 import pandas as pd
 from dateutil.relativedelta import relativedelta
-from src.utils import get_excel
-import logging
-from src.config import config, file_path
+from utils import get_operations_excel
 
 
 # Настройка логирования
-logging.basicConfig(level=logging.INFO, format="%(levelname)s-%(message)s")
-spending_by_weekday_logger = logging.getLogger("spending_by_weekday")
-logger = logging.getLogger(__name__)
-file_handler = logging.FileHandler("./logs/utils.log", "a")
-file_formatter = logging.Formatter(
-    "%(asctime)s %(levelname)s: %(filename)s %(funcName)s: %(message)s"
-)
-file_handler.setFormatter(file_formatter)
-logger.addHandler(file_handler)
-logger.setLevel(logging.DEBUG)
+from logger_settings import get_logger
+from src.decorators import log
 
-current_dir = Path(__file__).parent.parent.resolve()
-dir_transactions_excel = current_dir/'data'/'operations.xlsx'
-print(dir_transactions_excel)
+logger = get_logger()
 
-current_dir = Path(__file__).parent.parent.resolve()
-file_path_log = current_dir/'./log', 'reports.log'
-# base_dir = "tests"
-# sub_dir = "data"
-# file_name = "test_file.txt"
-# full_path = os.path.join(base_dir, sub_dir, file_name)
-# print(full_path)
+BASEDIR = Path(__file__).parent.parent.resolve()
+file_path = str(BASEDIR / "data" / "operations.xlsx")
 
-
+@log()
 def log_report_to_file(filename):
     """Декоратор для записи отчета в файл."""
 
@@ -57,6 +40,7 @@ def log_report_to_file(filename):
     return wrapper
 
 
+@log()
 def date_now():
     """Функция, возвращающая текущую дату"""
     now = datetime.now()
@@ -64,24 +48,24 @@ def date_now():
     return formatted_date
 
 
-@reports_decorator("report.txt")
-def spending_by_category(transactions: pd.DataFrame,
+@log()
+def spending_by_category(transactions_df: pd.DataFrame,
                          category: str,
                          date: Optional[str] = str(datetime.now())) -> pd.DataFrame:
     """Функция, которая возвращает датафрейм с тратами по заданной категории
        за последние три месяца (от переданной даты)."""
-    transactions['Дата операции'] = pd.to_datetime(transactions['Дата операции'], dayfirst=True)
-    transactions_by_category = transactions[(transactions['Дата операции']
+    transactions_df['Дата операции'] = pd.to_datetime(transactions_df['Дата операции'], dayfirst=True)
+    transactions_by_category = transactions_df[(transactions_df['Дата операции']
                                              <= (pd.to_datetime(date, dayfirst=True) + relativedelta(months=2)))
-                                            & (transactions['Дата операции'] >= pd.to_datetime(date, dayfirst=True))
-                                            & (transactions['Категория'].str.upper() == category.upper())]
+                                            & (transactions_df['Дата операции'] >= pd.to_datetime(date, dayfirst=True))
+                                            & (transactions_df['Категория'].str.upper() == category.upper())]
     trans = pd.DataFrame(transactions_by_category.groupby(['Категория'], as_index=False).
                          agg({'Сумма операции': 'sum'})['Сумма операции'].rename({'Сумма операции': category}))
     print(transactions_by_category.to_dict('records'))
     return trans
 
 
-@decorator_with_args('./logs/report.json')
+@log()
 def decorator_with_args(file: str):
     """Функция, которая записывает результаты из spending_by_category"""
     def my_big_decorator(func):
@@ -97,6 +81,7 @@ def decorator_with_args(file: str):
     return my_big_decorator
 
 
+@log()
 def print_spending_by_date(func):
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
@@ -105,6 +90,7 @@ def print_spending_by_date(func):
     return wrapper
 
 
+@log()
 def print_name_spending_by_date(file_name):
     def my_decorator(func):
         def wrapper(*args, **kwargs):
@@ -115,6 +101,7 @@ def print_name_spending_by_date(file_name):
     return my_decorator
 
 
+@log()
 def spending_by_weekday(transactions: pd.DataFrame, date: Optional[str] = None) -> Any | None:
     """возвращает средние траты в каждый из дней недели за последние три месяца (от переданной даты)"""
     try:
@@ -135,6 +122,7 @@ def spending_by_weekday(transactions: pd.DataFrame, date: Optional[str] = None) 
         spending_by_weekday_logger.warning(f"!!!! Неудачное формирование отчета. Ошибка - {e}")
 
 
+@log()
 def report_decorator(filename=None):
     def decorator(func):
         @functools.wraps(func)
@@ -150,11 +138,15 @@ def report_decorator(filename=None):
 
 
 if __name__ == '__main__':
-    log_report_to_file(filename)
-    date_now()
-    spending_by_category(transactions, category, date)
-    decorator_with_args(file)
-    print_spending_by_date(func)
-    print_name_spending_by_date(file_name)
-    spending_by_weekday(transactions, date)
-    report_decorator(filename)
+    #report_decorator(filename)
+    #spending_by_weekday(transactions, date)
+    #print_name_spending_by_date(file_name)
+    #print_spending_by_date(func)
+    #decorator_with_args(file)
+    #spending_by_category(transactions, category, date)
+    #date_now()
+    #log_report_to_file(filename)
+    result = spending_by_category(
+        get_operations_excel(file_path), "Аптеки", "26.07.2019 20:58:55"
+    )
+    print(result)
