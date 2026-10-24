@@ -1,15 +1,13 @@
+import inspect
 import json
 import logging
 from datetime import datetime
 import pandas as pd
-from typing import Any
-from settings import PATH_XLSX
-from src.services import get_beneficial_cashback_categories
-from src.views import get_greeting, main_views, analyze_data
-from src.utils import get_data_range
+from typing import Dict, Any
 from src.reports import spending_by_category
-from src.services import search_by_numbers
-
+from src.services import get_beneficial_cashback_categories
+from src.views import analyze_data
+from src.utils import get_greeting, read_excel_file, get_data_range, get_currency_rates, get_stock_prices, get_top_five_transactions
 
 # Настройка логирования
 from logger_settings import get_logger
@@ -19,7 +17,7 @@ logger = get_logger()
 
 
 @log()
-def main_page(data_user: str = None) -> None | dict[Any, Any] | dict[str, Any]:
+def main_page(data_user: str = None) -> None | Dict[Any, Any] | Dict[str, Any]:
     """
     Функция для страницы «Главная» принимает на вход строку с датой и временем в формате YYYY-MM-DD HH:MM:SS,
     если дата пользователем не задана, то по умолчанию текущая дата и время.
@@ -43,7 +41,7 @@ def main_page(data_user: str = None) -> None | dict[Any, Any] | dict[str, Any]:
         period = get_data_range(date_str, data_range)
 
         # Список транзакций за заданный период формата ["01.05.2020", "20.05.2020"]
-        list_of_transactions = read_excel_file(path_to_file=f"{file_path}\operations.xlsx", time_period=period)
+        list_of_transactions = read_excel_file(path_to_file="data/operations.xlsx", time_period=period)
 
         # Проверяем пустой ли список
         if not list_of_transactions:
@@ -59,7 +57,7 @@ def main_page(data_user: str = None) -> None | dict[Any, Any] | dict[str, Any]:
             cards = get_data_card(list_of_transactions)
 
             # Топ-5 транзакций по сумме платежа
-            top_transactions = get_top_transactions(list_of_transactions)
+            top_transactions = get_top_five_transactions(list_of_transactions)
 
             # Курс валют
             currency_rates = get_currency_rates("RUB")
@@ -90,7 +88,7 @@ if __name__ == '__main__':
 
     data_time = pd.Timestamp("11-10-2026 00:00:00")
     result1, result2, result3, result4, result5 = main_page(data_time)
-    # print("После вызова main_page()")
+    # print("После вызова maim_page")
     print(result1, result2, result3, result4, result5)
 
     print("\nСервисы.Простой поиск\n")
@@ -98,7 +96,7 @@ if __name__ == '__main__':
     simple_search(search_str, transaction)
 
     print("\nОТЧЕТЫ\n")
-    spending_by_category(pd.read_excel('transactions'), 'Фастфуд', '11.11.2019')
+    spending_by_category(pd.read_excel("data/operations.xlsx"), 'Фастфуд', '11.11.2019')
 
     transactions = [
         {"date": "2023-10-01", "amount": -1500, "category": "Еда"},
@@ -118,7 +116,7 @@ if __name__ == '__main__':
         "Категория": ["Супермаркеты", "Переводы", "Каршеринг"],
         }
     transactions_df = pd.DataFrame(data)
-    transactions_df.to_excel(file_path, index=False)
+    transactions_df.to_excel("data/operations.xlsx", index=False)
 
     result = spending_by_category(transactions_df, "Переводы")
     print(result)
@@ -126,10 +124,3 @@ if __name__ == '__main__':
     # Вызов функции анализа данных к веб-странице События
     result = analyze_data(date_str="31.12.2021 16:44:00", data_range="M")
     print(json.dumps(result, ensure_ascii=False, indent=4))
-
-    views = main_views("2022-02-12 23:12:12")
-    print(views)
-
-    search_transactions = search_by_numbers(PATH_XLSX, data.get("Другое"))
-    transactions_df = pd.read_excel(r".\data\operations.xlsx")
-    result = spending_by_category(transactions_df, "Пополнения", "21.03.2020")
