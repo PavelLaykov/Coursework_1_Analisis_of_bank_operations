@@ -7,6 +7,7 @@ from typing import Optional, Any
 from pathlib import Path
 import pandas as pd
 from dateutil.relativedelta import relativedelta
+from utils import get_operations_excel
 
 
 # Настройка логирования
@@ -146,6 +147,6 @@ if __name__ == '__main__':
     #date_now()
     #log_report_to_file(filename)
     result = spending_by_category(
-        reader_transaction_excel(file_path), "Аптеки", "26.07.2019 20:58:55"
+        get_operations_excel(file_path), "Аптеки", "26.07.2019 20:58:55"
     )
     print(result)
