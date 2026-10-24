@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from src.services import get_beneficial_cashback_categories, find_numbers
+from src.services import get_beneficial_cashback_categories, search_by_numbers
 
 # Включаем логирование для тестов
 logging.basicConfig(level=logging.INFO)
@@ -68,8 +68,8 @@ def test_search_by_numbers_logs_error(mock_error_logger):
     mock_error_logger.assert_called_once()
 
 
-def test_find_numbers(number):
-    assert find_numbers("966") == number
+def test_search_by_numbers(number: str):
+    assert search_by_numbers("966") == number
 
 
 if __name__ == '__main__':

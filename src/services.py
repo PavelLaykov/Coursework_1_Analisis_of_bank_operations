@@ -4,6 +4,7 @@ from collections import defaultdict
 import datetime
 import numpy as np
 import pandas as pd
+from pathlib import Path
 from functools import reduce
 
 # Настройка логирования
@@ -12,6 +13,8 @@ from src.decorators import log
 
 logger = get_logger()
 
+BASEDIR = Path(__file__).parent.parent.resolve()
+file_path = str(BASEDIR / "data" / "operations.xlsx")
 
 @log()
 def get_beneficial_cashback_categories(data, year, month):

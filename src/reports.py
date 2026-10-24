@@ -4,16 +4,19 @@ import os
 from datetime import datetime
 from functools import wraps
 from typing import Optional, Any
-
+from pathlib import Path
 import pandas as pd
 from dateutil.relativedelta import relativedelta
 
-from decorators import log
+
 # Настройка логирования
 from logger_settings import get_logger
+from src.decorators import log
 
 logger = get_logger()
 
+BASEDIR = Path(__file__).parent.parent.resolve()
+file_path = str(BASEDIR / "data" / "operations.xlsx")
 
 @log()
 def log_report_to_file(filename):
@@ -143,6 +146,6 @@ if __name__ == '__main__':
     #date_now()
     #log_report_to_file(filename)
     result = spending_by_category(
-        reader_transaction_excel(".\data\operations.xlsx"), "Аптеки", "26.07.2019 20:58:55"
+        reader_transaction_excel(file_path), "Аптеки", "26.07.2019 20:58:55"
     )
     print(result)
