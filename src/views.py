@@ -3,16 +3,17 @@ import json
 from pathlib import Path
 import pandas as pd
 
+from src.utils import get_operations_excel, common_information, get_top_five_transactions, get_stock_prices, \
+    get_exchange_rates, get_greeting
+
 # Настройка логирования
 from logger_settings import get_logger
 from src.decorators import log
-from src.utils import read_excel_file, common_information, get_top_five_transactions, get_stock_prices, \
-    get_exchange_rates, get_greeting
-
-logger = get_logger()
 
 BASEDIR = Path(__file__).parent.parent.resolve()
 file_path = str(BASEDIR / "data" / "operations.xlsx")
+
+logger = get_logger()
 
 transaction_for_print = [{}]
 
@@ -21,7 +22,7 @@ transaction_for_print = [{}]
 def main_views(str_time='datetime'):
     """Главная функция для анализа данных принимает дату в формате строки YYYY-MM-DD HH:MM:SS и
     возвращает общую информацию в формате json о банковских транзакциях за период с начала месяца до этой даты"""
-    data = read_excel_file(file_path)
+    data = get_operations_excel(file_path)
     data_df = pd.DataFrame(data)
     date_obj = datetime.datetime.strptime(str_time, "%Y-%m-%d %H:%M:%S")
     data_df["datetime"] = pd.to_datetime(data_df["Дата операции"], dayfirst=True)
@@ -30,7 +31,7 @@ def main_views(str_time='datetime'):
         ]
 
     agg_dict = {
-        "greetings": get_greeting('datetime'),
+        "greetings": get_greeting(),
         "cards": common_information(json_data),
         "top_transactions": get_top_five_transactions(json_data),
         "currency_rates": get_stock_prices("user_settings.json"),
@@ -40,7 +41,6 @@ def main_views(str_time='datetime'):
 
 
 print(main_views(str_time="2020-08-11 15:25:00"))
-
 
 
 @log()
