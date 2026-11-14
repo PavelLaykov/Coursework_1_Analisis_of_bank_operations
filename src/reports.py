@@ -7,7 +7,7 @@ from typing import Optional, Any
 from pathlib import Path
 import pandas as pd
 from dateutil.relativedelta import relativedelta
-from utils import get_operations_excel
+from src.utils import get_operations_excel
 
 
 # Настройка логирования

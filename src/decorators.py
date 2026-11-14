@@ -2,8 +2,11 @@ import json
 from functools import wraps
 from typing import Any
 from venv import logger
-
+from pathlib import Path
 import pandas as pd
+
+BASEDIR = Path(__file__).parent.parent.resolve()
+file_path = str(BASEDIR / "data" / "operations.xlsx")
 
 
 def log(filename: Any = None) -> Any:

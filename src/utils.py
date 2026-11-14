@@ -3,18 +3,20 @@ import logging
 import os
 from builtins import isinstance
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Union
 from urllib.request import urlopen
+from pathlib import Path
 import numpy
 import pandas as pd
-from pathlib import Path
 import requests
 from dotenv import load_dotenv
-
 
 # Настройка логирования
 from logger_settings import get_logger
 from src.decorators import log
+
+BASEDIR = Path(__file__).parent.parent.resolve()
+file_path = str(BASEDIR / "data" / "operations.xlsx")
 
 logger = get_logger()
 
@@ -24,9 +26,6 @@ top_5_operations_logger = logging.getLogger("top_5_operations")
 common_information_logger = logging.getLogger("common_information")
 get_exchange_rate_logger = logging.getLogger("get_exchange_rate")
 get_stock_price_logger = logging.getLogger("get_stock_price")
-
-BASEDIR = Path(__file__).parent.parent.resolve()
-file_path = str(BASEDIR / "data" / "operations.xlsx")
 
 
 @log()
@@ -99,32 +98,15 @@ def get_greeting() -> str:
 
 
 @log()
-def read_excel_file(file_path) -> Union[None, pd.DataFrame]:
+def get_operations_excel(file_path) -> list[dict] | Union[None, pd.DataFrame]:
+    """ Функция возвращает список транзакций (словарь или датафрейм), загруженный из внешнего файла Excel,
+    в формате DataFrame за период с начала месяца до заданной даты в формате YYYY-MM-DD HH:MM:SS.
+    :param file_path: Расположение файла
+    :return: Файл DataFrame
     """
-    Чтение файла Excel и получение номера карты и
-    :param file_path: расположение файла
-    :return: файл DataFrame
-    """
-    # Проверка на формат файла
-    if file_path is None:
-        logger.warning("Файл не найден")
-        return None
-    if not (file_path.endswith(".xlsx") or file_path.endswith(".xls")):  # проверка формата файла (окончание .xlsx)
-        logger.warning("Неверный формат файла")
-        return None
-    try:
-        excel_datas = pd.read_excel(file_path)
-        return excel_datas
-    except Exception as e:
-        logger.warning(f"Ошибка файла {e}")
-        return None
-
-@log()
-def get_operations_excel() -> list[dict]:
-    """ Функция возвращает список транзакций (словарь или датафрейм), загруженный из внешнего файла Excel
-    и возвращает их в формате DataFrame за период с начала месяца до заданной даты в формате YYYY-MM-DD HH:MM:SS"""
+    formatting = ""
     current_transaction = []
-    get_excel_file = pd.read_excel("./data/operations.xlsx")
+    get_excel_file = pd.read_excel(file_path)
     if formatting == "dataframe":
         logger.debug('Convert to dataframe successfully')
         return get_excel_file

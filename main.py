@@ -4,10 +4,11 @@ import logging
 from datetime import datetime
 import pandas as pd
 from typing import Dict, Any
+
 from src.reports import spending_by_category
 from src.services import get_beneficial_cashback_categories
 from src.views import analyze_data
-from src.utils import get_greeting, read_excel_file, get_data_range, get_currency_rates, get_stock_prices, get_top_five_transactions
+from src.utils import get_greeting, get_operations_excel, get_data_range, get_currency_rates, get_stock_prices, get_top_five_transactions
 
 # Настройка логирования
 from logger_settings import get_logger
@@ -41,7 +42,7 @@ def main_page(data_user: str = None) -> None | Dict[Any, Any] | Dict[str, Any]:
         period = get_data_range(date_str, data_range)
 
         # Список транзакций за заданный период формата ["01.05.2020", "20.05.2020"]
-        list_of_transactions = read_excel_file(path_to_file="data/operations.xlsx", time_period=period)
+        list_of_transactions = get_operations_excel(path_to_file="data/operations.xlsx", time_period=period)
 
         # Проверяем пустой ли список
         if not list_of_transactions:
