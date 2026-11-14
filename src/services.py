@@ -9,12 +9,43 @@ from pathlib import Path
 
 # Настройка логирования
 from logger_settings import get_logger
-from src.decorators import log
+from decorators import log
 
-BASEDIR = Path(__file__).parent.parent.resolve()
+BASEDIR = Path(__file__).parent.resolve()
 file_path = str(BASEDIR / "data" / "operations.xlsx")
 
 logger = get_logger()
+
+
+@log()
+def simple_search(file: str, search: str) -> str:
+    """
+    Поиск транзакций по ключевому слову
+    :param file: Путь к файлу
+    :param search: Строка для поиска
+    :return: JSON-строка
+    """
+    result_search = []
+
+    try:
+        df = pd.read_excel(file)
+        logger.info(f"Файл {file} найден, начинаем работку")
+
+        for index, row in df.iterrows():
+            category = str(row["Категория"])
+            description = str(row["Описание"])
+            if category and description:
+                if df.search(search, category, df.IGNORECASE) or df.search(search, description, df.IGNORECASE):
+                    result_search.append(row.to_dict())
+            elif category or description is None:
+                print(f"Данные в строке {index} не найдены")
+
+        result_search = json.dumps(result_search, indent=4, ensure_ascii=False)
+        print(result_search)
+
+    except Exception as e:
+        logger.error(f"Ошибка чтения файла {e}")
+    return result_search
 
 
 @log()
@@ -32,8 +63,8 @@ def get_beneficial_cashback_categories(data, year, month):
 
     # Функция для фильтрации транзакций по году и месяцу
     is_in_month = (
-        lambda x: datetime.strptime(x["date"], "%Y-%m-%d").year == year
-        and datetime.strptime(x["date"], "%Y-%m-%d").month == month
+        lambda x: datetime.datetime.strptime(x["date"], "%Y-%m-%d").year == year
+        and datetime.datetime.strptime(x["date"], "%Y-%m-%d").month == month
     )
 
     filtered_transactions = list(filter(is_in_month, data))
@@ -151,12 +182,3 @@ def search_by_numbers(search_bar: str, list_operations: list[dict]) -> str:
         services_logger.error(f"Ошибка при обработке списка словарей: {e}")
         return json.dumps([])
     return json.dumps(result, ensure_ascii=False, indent=4)
-
-
-if __name__ == '__main__':
-    #search_by_numbers(search_bar, list_operations)
-    #investment_bank(transactions, month, limit)
-    #most_profit_cashback(transactions, year, month)
-    #accumulate(acc, transaction)
-    #get_beneficial_cashback_categories(data, year, month)
-    print('services')

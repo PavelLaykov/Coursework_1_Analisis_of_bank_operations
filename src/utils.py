@@ -13,9 +13,9 @@ from dotenv import load_dotenv
 
 # Настройка логирования
 from logger_settings import get_logger
-from src.decorators import log
+from decorators import log
 
-BASEDIR = Path(__file__).parent.parent.resolve()
+BASEDIR = Path(__file__).parent.resolve()
 file_path = str(BASEDIR / "data" / "operations.xlsx")
 
 logger = get_logger()
@@ -29,7 +29,7 @@ get_stock_price_logger = logging.getLogger("get_stock_price")
 
 
 @log()
-def get_data_range(date_str, data_range):
+def get_data_range(date_str='', data_range=''):
     """ Функция преобразования входной строки, если время не задано"""
     if len(date_str) == 10:  # формат 'DD.MM.YYYY'
         date_str += " 00:00:00"
@@ -134,7 +134,7 @@ top_list = []
 @log()
 def generate_json(current_date):
     """Функция, возвращающая отфильтрованные по дате транзакции"""
-    for transaction in get_excel("dict"):
+    for transaction in get_operations_excel("dict"):
         if (
             str(transaction["Дата платежа"])[2:10] == current_date[2:10]
             and str(transaction["Дата платежа"])[:2] <= current_date[:2]
@@ -156,28 +156,6 @@ def filtered_cards():
         cards.append(card)
     logger.debug('Correct filtered cards')
     return cards
-
-
-@log()
-def common_information(list_dict: list[dict]) -> list[Any] | None:
-    """Функция возвращает общую информацию по всем транзакциям"""
-    try:
-        list_data = []
-        df = pd.DataFrame(list_dict)
-        df["datetime"] = pd.to_datetime(df["Дата операции"], dayfirst=True)
-        grouped_data = df.groupby("Номер карты").agg({"Сумма платежа": "sum", "Кэшбэк": "sum"}).reset_index()
-        grouped_data["Сумма платежа"] = grouped_data["Сумма платежа"].abs()
-        for _, row in grouped_data.iterrows():
-            dic = {"last_digits": (row["Номер карты"])[-4:], "total_spent": row["Сумма платежа"],
-                   "cashback": round((row["Кэшбэк"]) / (row["Сумма платежа"]) * 100, 2)}
-            list_data.append(dic)
-        common_information_logger.info("Успешно сформирована общая информация по всем транзакциям")
-        return list_data
-    except Exception as e:
-        get_exchange_rate_logger.warning(
-            f"""!!!! Не удалось сформировать отчет проверьте поля списка {list_dict}.
-        Ошибка - {e}"""
-        )
 
 
 @log()
@@ -210,6 +188,28 @@ def get_top_five_transactions(transaction_lst_: list[dict[str, Any]]) -> list[di
 
 
 @log()
+def common_information(list_dict: list[dict]) -> list[Any] | None:
+    """Функция возвращает общую информацию по всем транзакциям"""
+    try:
+        list_data = []
+        df = pd.DataFrame(list_dict)
+        df["datetime"] = pd.to_datetime(df["Дата операции"], dayfirst=True)
+        grouped_data = df.groupby("Номер карты").agg({"Сумма платежа": "sum", "Кэшбэк": "sum"}).reset_index()
+        grouped_data["Сумма платежа"] = grouped_data["Сумма платежа"].abs()
+        for _, row in grouped_data.iterrows():
+            dic = {"last_digits": (row["Номер карты"])[-4:], "total_spent": row["Сумма платежа"],
+                   "cashback": round((row["Кэшбэк"]) / (row["Сумма платежа"]) * 100, 2)}
+            list_data.append(dic)
+        common_information_logger.info("Успешно сформирована общая информация по всем транзакциям")
+        return list_data
+    except Exception as e:
+        get_exchange_rate_logger.warning(
+            f"""!!!! Не удалось сформировать отчет проверьте поля списка {list_dict}.
+        Ошибка - {e}"""
+        )
+
+
+@log()
 def get_currency_rates(currencies):
     rates = {}
     for currency in currencies:
@@ -237,7 +237,7 @@ def get_exchange_rates(json_file) -> list[Any] | None:
         response = requests.get(url)
         if response.status_code == 200:
             data_curr = response.json()
-            with open((os.path.join("../data/", json_file)), "r") as file:
+            with open((os.path.join("data/", json_file)), "r") as file:
                 user_shares = json.load(file)
                 for i in user_shares["user_currencies"]:
                     dic = {"currency": i, "exchange_rate": data_curr["Valute"][i]["Value"]}
@@ -255,6 +255,7 @@ def get_exchange_rates(json_file) -> list[Any] | None:
 def get_stock_prices(json_file: str) -> list[Any] | None:
     """Получает json-файл с наименованиями ценных бумаг и url-ссылку на котировки ценных бумаг и
     возвращает их текущие котировки."""
+    stock = 0
     logging.debug(f"Запрос цены для акции: {stock}")
     try:
         load_dotenv()
@@ -264,7 +265,7 @@ def get_stock_prices(json_file: str) -> list[Any] | None:
         response = urlopen(url)
         data = response.read().decode("utf-8")
         stock_list = json.loads(data)
-        with open((os.path.join("../data/", json_file)), "r") as file:
+        with open((os.path.join("data/", json_file)), "r") as file:
             user_shares = json.load(file)
         for i in user_shares["user_stocks"]:
             for q in stock_list:
@@ -317,18 +318,5 @@ def group_income(filtered_data):
     return combined_income
 
 
-if __name__ == '__main__':
-    #group_income(filtered_data)
-    #group_expenses(filtered_data)
-    #get_stock_prices(json_file)
-    #get_exchange_rates(json_file)
-    #get_currency_rates(currencies)
-    #get_top_five_transactions(transaction_lst)
-    #common_information(list_dict)
-    #read_excel_file(path)
-    #filtered_cards()
-    #generate_json(current_date)
-    #get_operations_excel()
-    #get_greeting()
-    #get_data_range(date_str, data_range)
-    print('utils')
+#if __name__ == '__main__':
+    #print('utils')
