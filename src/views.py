@@ -1,16 +1,16 @@
-import datetime
+from datetime import datetime
 import json
 from pathlib import Path
 import pandas as pd
 
-from src.utils import get_operations_excel, common_information, get_top_five_transactions, get_stock_prices, \
-    get_exchange_rates, get_greeting
+from utils import (get_greeting, get_operations_excel, common_information, get_top_five_transactions, get_stock_prices,
+    get_data_range, get_exchange_rates)
 
 # Настройка логирования
 from logger_settings import get_logger
-from src.decorators import log
+from decorators import log
 
-BASEDIR = Path(__file__).parent.parent.resolve()
+BASEDIR = Path(__file__).parent.resolve()
 file_path = str(BASEDIR / "data" / "operations.xlsx")
 
 logger = get_logger()
@@ -40,9 +40,6 @@ def main_views(str_time='datetime'):
     return json.dumps(agg_dict, ensure_ascii=False)
 
 
-print(main_views(str_time="2020-08-11 15:25:00"))
-
-
 @log()
 def final_list(current_date):
     """Функция, формирующая конечный список из готовых данных"""
@@ -55,9 +52,6 @@ def final_list(current_date):
     transaction_for_print[0]["currency_rates"] = add_to_list()
     transaction_for_print[0]["stock_prices"] = get_current_stock(settings)
     return transaction_for_print
-
-
-print(final_list("01.11.2021 23:50:17"), sep="\n")
 
 
 @log()
@@ -75,14 +69,16 @@ def analyze_data(date_str='datetime', data_range="M"):
 
     # Фильтруем данные по дате
     filtered_data = filtered_data[
-        (filtered_data["Дата операции"] >= start_date) & (filtered_data["Дата операции"] <= end_date)
-    ]
+        (filtered_data["Дата операции"] >= start_date) & (filtered_data["Дата операции"] <= end_date)]
+
     # Анализ расходов
     expenses_summary = group_expenses(filtered_data)
     total_expenses = filtered_data["Сумма операции"].sum()
+
     # Анализ поступлений
     income_summary = group_income(filtered_data)
     total_income = filtered_data["Сумма операции"][filtered_data["Сумма операции"] > 0].sum()
+
     # Получение валютных курсов и цен акций
     try:
         with open(file_path) as f:
@@ -100,16 +96,3 @@ def analyze_data(date_str='datetime', data_range="M"):
         "Цены акций": stock_prices,
     }
     return result
-
-
-# Пример вызова функции анализа данных к веб-странице События
-result = analyze_data(date_str="31.12.2021 16:44:00", data_range="M")
-print(json.dumps(result, ensure_ascii=False, indent=4))
-
-
-if __name__ == '__main__':
-    #analyze_data(date_str='datetime', data_range)
-    #final_list(current_date)
-    #main_views(str_time)
-    #get_greeting(datetime)
-    print('views')

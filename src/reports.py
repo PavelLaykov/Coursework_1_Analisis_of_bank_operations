@@ -2,30 +2,30 @@ import functools
 import json
 import os
 from datetime import datetime
-from functools import wraps
 from typing import Optional, Any
 from pathlib import Path
 import pandas as pd
 from dateutil.relativedelta import relativedelta
-from src.utils import get_operations_excel
+from utils import get_operations_excel
 
 
 # Настройка логирования
 from logger_settings import get_logger
-from src.decorators import log
+from decorators import log
 
 logger = get_logger()
 
-BASEDIR = Path(__file__).parent.parent.resolve()
+BASEDIR = Path(__file__).parent.resolve()
 file_path = str(BASEDIR / "data" / "operations.xlsx")
 
+
 @log()
-def log_report_to_file(filename):
+def log_report_to_file(filename = None):
     """Декоратор для записи отчета в файл."""
 
-    def wrapper(func):
-        @wraps(func)
-        def inner(*args, **kwargs):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
             df = func(*args, **kwargs)
             logger.info("Проверка: являются ли данные датафреймом")
             if isinstance(df, pd.DataFrame):
@@ -33,11 +33,13 @@ def log_report_to_file(filename):
                 df.to_json(filename, orient="records", lines=True, force_ascii=False)
             else:
                 logger.error("Данные не являются датафреймом. В файл записаны не будут")
+            with open(filename, "a") as f:
+                f.write(f"{df}\n")
             return df
 
-        return inner
+        return wrapper
 
-    return wrapper
+    return decorator
 
 
 @log()
@@ -131,22 +133,11 @@ def report_decorator(filename=None):
             with open(filename, "a") as f:
                 f.write(f"{result}\n")
             return result
-
         return wrapper
-
     return decorator
 
 
 if __name__ == '__main__':
-    #report_decorator(filename)
-    #spending_by_weekday(transactions, date)
-    #print_name_spending_by_date(file_name)
-    #print_spending_by_date(func)
-    #decorator_with_args(file)
-    #spending_by_category(transactions, category, date)
-    #date_now()
-    #log_report_to_file(filename)
     result = spending_by_category(
-        get_operations_excel(file_path), "Аптеки", "26.07.2019 20:58:55"
-    )
+        get_operations_excel(file_path), "Аптеки", "26.07.2019 20:58:55")
     print(result)

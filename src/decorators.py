@@ -5,7 +5,7 @@ from venv import logger
 from pathlib import Path
 import pandas as pd
 
-BASEDIR = Path(__file__).parent.parent.resolve()
+BASEDIR = Path(__file__).parent.resolve()
 file_path = str(BASEDIR / "data" / "operations.xlsx")
 
 
